@@ -8,8 +8,8 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
-import { API } from "../config";
-import useRouteStops from "../useRouteStops";
+import { API } from "./config";
+import useRouteStops from "./useRouteStops";
 
 const names = { 1: "Low", 2: "Medium", 3: "High" };
 const colors = { 1: "#2e9e5b", 2: "#e9a23b", 3: "#d64545" };
