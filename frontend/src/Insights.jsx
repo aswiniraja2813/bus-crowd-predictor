@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import useRouteStops from "./useRouteStops";
 import {
   BarChart,
   Bar,
@@ -9,7 +8,8 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
-import { API } from "./config";
+import { API } from "../config";
+import useRouteStops from "../useRouteStops";
 
 const names = { 1: "Low", 2: "Medium", 3: "High" };
 const colors = { 1: "#2e9e5b", 2: "#e9a23b", 3: "#d64545" };
@@ -36,28 +36,37 @@ function levelOf(average) {
   return 3;
 }
 
-function Insights({ routes, stops }) {
+function Insights({ routes }) {
   const [routeId, setRouteId] = useState("");
   const [stopId, setStopId] = useState("");
   const [day, setDay] = useState("0");
   const [data, setData] = useState(null);
+  const [error, setError] = useState(false);
 
   const routeStops = useRouteStops(routeId);
-
   const ready = routeId !== "" && stopId !== "";
 
   useEffect(() => {
     if (!ready) {
       setData(null);
+      setError(false);
       return;
     }
 
     let ignore = false;
+    setError(false);
+    setData(null);
 
     fetch(`${API}/hourly?route=${routeId}&stop=${stopId}&day=${day}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Bad response");
+        return res.json();
+      })
       .then((list) => {
         if (!ignore) setData(list);
+      })
+      .catch(() => {
+        if (!ignore) setError(true);
       });
 
     return () => {
@@ -81,41 +90,43 @@ function Insights({ routes, stops }) {
     <section className="insights">
       <h2>Best time to travel</h2>
 
-      <label>
-  Route
-  <select
-    value={routeId}
-    onChange={(e) => {
-      setRouteId(e.target.value);
-      setStopId("");
-    }}
-  >
-    <option value="">Select route</option>
-    {routes.map((route) => (
-      <option key={route.id} value={route.id}>
-        {route.route_number}
-      </option>
-    ))}
-  </select>
-</label>
+      <div className="fields">
+        <label>
+          Route
+          <select
+            value={routeId}
+            onChange={(e) => {
+              setRouteId(e.target.value);
+              setStopId("");
+            }}
+          >
+            <option value="">Select route</option>
+            {routes.map((route) => (
+              <option key={route.id} value={route.id}>
+                {route.route_number}
+              </option>
+            ))}
+          </select>
+        </label>
 
-<label>
-  Stop
-  <select
-    value={stopId}
-    disabled={routeId === ""}
-    onChange={(e) => setStopId(e.target.value)}
-  >
-    <option value="">
-      {routeId === "" ? "Choose a route first" : "Select stop"}
-    </option>
-    {routeStops.map((stop) => (
-      <option key={stop.id} value={stop.id}>
-        {stop.name}
-      </option>
-    ))}
-  </select>
-</label>
+        <label>
+          Stop
+          <select
+            value={stopId}
+            disabled={routeId === ""}
+            onChange={(e) => setStopId(e.target.value)}
+          >
+            <option value="">
+              {routeId === "" ? "Choose a route first" : "Select stop"}
+            </option>
+            {routeStops.map((stop) => (
+              <option key={stop.id} value={stop.id}>
+                {stop.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       <div className="group" role="group" aria-label="Day">
         <span className="field-label">Day</span>
@@ -135,6 +146,8 @@ function Insights({ routes, stops }) {
 
       {!ready ? (
         <p className="empty">Choose a route and a stop to see the crowd through the day.</p>
+      ) : error ? (
+        <p className="empty">Could not load the chart. Check that the server is running.</p>
       ) : data === null ? (
         <p className="empty">Loading…</p>
       ) : chartData.length === 0 ? (
