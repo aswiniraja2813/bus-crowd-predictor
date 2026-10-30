@@ -138,7 +138,3 @@ Open the address that `npm run dev` prints (usually `http://localhost:5173`).
 - Find better ways to check that a report comes from someone really on the bus
 
 ---
-
-## 👩‍💻 Author
-
-**Aswini**
